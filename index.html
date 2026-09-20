@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pulse - a HIIT interval timer that won't let you cheat</title>
+<meta name="description" content="Pulse is a HIIT interval timer with work/rest/rounds, Tabata presets, audio cues, and a screen that changes color with every phase.">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; background:#120606; color:#ffecec; min-height:100vh; }
+  .hero { min-height:92vh; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:40px 20px;
+    background:radial-gradient(ellipse 75% 50% at 50% 110%, #dc262655 0%, #7f1d1d30 40%, transparent 70%); }
+  .badge { font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#f87171; border:1px solid #7f1d1d; border-radius:999px; padding:6px 16px; margin-bottom:26px; }
+  h1 { font-size:clamp(38px,7.5vw,72px); font-weight:800; line-height:1.06;
+    background:linear-gradient(120deg,#fecaca,#f87171 45%,#b91c1c); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .sub { font-size:clamp(16px,2.4vw,21px); color:#a06b6b; max-width:560px; margin-top:20px; line-height:1.55; }
+  .cta { margin-top:38px; display:inline-block; background:linear-gradient(135deg,#ef4444,#b91c1c); color:#fff; font-size:18px; font-weight:700;
+    padding:16px 44px; border-radius:14px; text-decoration:none; box-shadow:0 10px 34px #ef444450; transition:transform .15s ease; }
+  .cta:hover { transform:translateY(-2px); }
+  .feats { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; max-width:900px; margin:0 auto; padding:20px 20px 70px; }
+  .f { background:#1c0d0d; border:1px solid #3a1c1c; border-radius:14px; padding:22px; }
+  .f .ic { font-size:26px; }
+  .f h3 { font-size:16px; margin:10px 0 6px; }
+  .f p { font-size:14px; color:#a06b6b; line-height:1.5; }
+  footer { text-align:center; color:#5c3636; font-size:13px; padding:26px; border-top:1px solid #2a1414; }
+  footer a { color:#a06b6b; }
+</style>
+</head>
+<body>
+  <section class="hero">
+    <div class="badge">iLanis App Factory &middot; idea #9</div>
+    <h1>Work when it's green.<br>Rest when it's red.</h1>
+    <p class="sub">Pulse runs your intervals so you don't have to count. Set work, rest, and rounds - or tap a Tabata preset - and the whole screen tells you what to do, with audio cues you can hear over music.</p>
+    <a class="cta" href="app.html">Start a workout</a>
+  </section>
+  <section class="feats">
+    <div class="f"><div class="ic">&#9200;</div><h3>Any interval</h3><p>Work from 5 seconds to 5 minutes, rest the same, up to 40 rounds. Total time is shown before you start.</p></div>
+    <div class="f"><div class="ic">&#128307;</div><h3>Tabata presets</h3><p>Classic Tabata 20/10 x8, a 40/20 builder, and even 30/30 - one tap and go.</p></div>
+    <div class="f"><div class="ic">&#128266;</div><h3>Audio cues</h3><p>A countdown beep in the last three seconds of every phase and a chime when you switch. Eyes optional.</p></div>
+    <div class="f"><div class="ic">&#128161;</div><h3>Color-coded screen</h3><p>Green means work, red means rest. Readable from across the room, mid-burpee.</p></div>
+  </section>
+  <footer>No sign-up. No tracking. Everything runs in your browser.<br>
+  Built by the <a href="https://ilanis-agent.github.io/app-factory/">iLanis App Factory</a> &middot; <a href="https://github.com/iLanis-agent/pulse-timer">source on GitHub</a></footer>
+</body>
+</html>
