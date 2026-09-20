@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pulse - a HIIT interval timer that won't let you cheat</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; background:#120606; color:#ffecec; min-height:100vh; transition:background .4s; }
+  body.work { background:#0a1a0c; }
+  body.rest { background:#1a0a0a; }
+  body.ready { background:#12120a; }
+  .wrap { max-width:560px; margin:0 auto; padding:18px 16px 50px; text-align:center; }
+  h1 { font-size:22px; font-weight:800; }
+  h1 .p { color:#f87171; }
+  .tag { color:#a06b6b; font-size:12px; margin:4px 0 16px; }
+  #ringbox { position:relative; width:min(78vw,320px); margin:14px auto; }
+  #ringbox svg { width:100%; transform:rotate(-90deg); }
+  #ringbox .center { position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; align-items:center; }
+  #phase { font-size:15px; letter-spacing:3px; text-transform:uppercase; font-weight:700; }
+  #clock { font-size:64px; font-weight:800; font-variant-numeric:tabular-nums; line-height:1.05; }
+  #round { font-size:13px; color:#a08a8a; margin-top:2px; }
+  .controls { display:flex; gap:8px; justify-content:center; margin:16px 0; }
+  .controls button { background:#241010; border:1px solid #442020; color:#ffecec; border-radius:10px; padding:12px 26px; font-size:15px; font-weight:600; cursor:pointer; }
+  .controls .go { background:linear-gradient(135deg,#ef4444,#b91c1c); border:none; }
+  .controls button:hover { border-color:#f87171; }
+  .presets { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-bottom:14px; }
+  .presets button { background:#241010; border:1px solid #442020; color:#d8a8a8; border-radius:9px; padding:8px 14px; font-size:13px; cursor:pointer; }
+  .presets button.on { border-color:#f87171; color:#ffecec; }
+  .cfg { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; max-width:420px; margin:0 auto; }
+  .cfg .cell { background:#1c0d0d; border:1px solid #3a1c1c; border-radius:11px; padding:12px; }
+  .cfg .k { font-size:11px; text-transform:uppercase; letter-spacing:1px; color:#a06b6b; }
+  .cfg .v { font-size:24px; font-weight:800; margin:6px 0; }
+  .cfg .btns { display:flex; gap:6px; justify-content:center; }
+  .cfg .btns button { width:30px; height:30px; border-radius:8px; background:#2a1414; border:1px solid #442020; color:#ffecec; font-size:16px; cursor:pointer; }
+  #total { color:#a06b6b; font-size:13px; margin-top:12px; }
+  footer { color:#5c3636; font-size:12px; margin-top:26px; }
+  footer a { color:#a06b6b; text-decoration:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1><span class="p">&#10084;</span> Pulse</h1>
+  <p class="tag">a HIIT timer that won't let you cheat the rest</p>
+  <div id="ringbox">
+    <svg viewBox="0 0 120 120">
+      <circle cx="60" cy="60" r="52" fill="none" stroke="#3a1c1c" stroke-width="7"/>
+      <circle id="arc" cx="60" cy="60" r="52" fill="none" stroke="#ef4444" stroke-width="7" stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="0"/>
+    </svg>
+    <div class="center">
+      <div id="phase">ready</div>
+      <div id="clock">--</div>
+      <div id="round">set your intervals</div>
+    </div>
+  </div>
+  <div class="controls">
+    <button id="main" class="go">Start</button>
+    <button id="reset">Reset</button>
+  </div>
+  <div class="presets">
+    <button data-p="20,10,8">Tabata 20/10 x8</button>
+    <button data-p="40,20,6">Classic 40/20 x6</button>
+    <button data-p="30,30,10">Even 30/30 x10</button>
+  </div>
+  <div class="cfg">
+    <div class="cell"><div class="k">work</div><div class="v" id="vw">20s</div><div class="btns"><button data-c="w,-5">-</button><button data-c="w,5">+</button></div></div>
+    <div class="cell"><div class="k">rest</div><div class="v" id="vr">10s</div><div class="btns"><button data-c="r,-5">-</button><button data-c="r,5">+</button></div></div>
+    <div class="cell"><div class="k">rounds</div><div class="v" id="vn">8</div><div class="btns"><button data-c="n,-1">-</button><button data-c="n,1">+</button></div></div>
+  </div>
+  <div id="total"></div>
+  <footer><a href="index.html">&#8592; About</a> &nbsp;|&nbsp; Pulse &middot; idea #9 from the iLanis App Factory</footer>
+</div>
+<script>
+var C={w:20,r:10,n:8};
+var T={running:false,phase:'idle',left:0,round:0,int:null};
+var READY=10, CIRC=326.7;
+var actx=null;
+function el(id){return document.getElementById(id);}
+function beep(f,d,when){
+  try{
+    if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)();
+    actx.resume();
+    var t0=actx.currentTime+(when||0);
+    var o=actx.createOscillator(), g=actx.createGain();
+    o.type='sine'; o.frequency.value=f;
+    g.gain.setValueAtTime(0.0001,t0);
+    g.gain.exponentialRampToValueAtTime(0.4,t0+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001,t0+d);
+    o.connect(g); g.connect(actx.destination);
+    o.start(t0); o.stop(t0+d+0.05);
+  }catch(_){}
+}
+function cfgShow(){
+  el('vw').textContent=C.w+'s'; el('vr').textContent=C.r+'s'; el('vn').textContent=C.n;
+  var tot=READY+C.n*C.w+(C.n-1)*C.r;
+  el('total').textContent='total: '+Math.floor(tot/60)+'m '+(tot%60)+'s (incl. 10s get-ready)';
+}
+function setPhase(p,color,bg){
+  T.phase=p;
+  el('phase').textContent=p;
+  el('phase').style.color=color;
+  el('arc').setAttribute('stroke',color);
+  document.body.className=bg;
+}
+function draw(){
+  el('clock').textContent=T.left;
+  el('round').textContent=T.phase==='idle'?'set your intervals':(T.round>0?'round '+T.round+' of '+C.n:'get ready');
+  var total=T.phaseLen||1;
+  el('arc').setAttribute('stroke-dashoffset', String(CIRC*(1-T.left/total)));
+}
+function flow(){
+  if(T.phase==='ready'){ T.round=1; startPhase('work'); return; }
+  if(T.phase==='work'){
+    if(T.round>=C.n){ finish(); return; }
+    startPhase('rest'); return;
+  }
+  if(T.phase==='rest'){ T.round++; startPhase('work'); return; }
+}
+function startPhase(p){
+  if(p==='work'){ setPhase('work','#4ade80','work'); T.phaseLen=C.w; T.left=C.w; beep(880,0.35); }
+  else if(p==='rest'){ setPhase('rest','#f87171','rest'); T.phaseLen=C.r; T.left=C.r; beep(440,0.35); }
+  else { setPhase('ready','#facc15','ready'); T.phaseLen=READY; T.left=READY; beep(660,0.2); }
+  draw();
+}
+function tick(){
+  T.left--;
+  if(T.left<=3&&T.left>0) beep(660,0.12);
+  if(T.left<0){ flow(); return; }
+  draw();
+}
+function start(){
+  if(T.running){ pause(); return; }
+  T.running=true; el('main').textContent='Pause';
+  if(T.phase==='idle'||T.phase==='done'){ T.round=0; startPhase('ready'); }
+  else beep(880,0.2);
+  T.int=setInterval(tick,1000);
+}
+function pause(){
+  T.running=false; el('main').textContent='Resume';
+  clearInterval(T.int); beep(330,0.2);
+}
+function resetAll(){
+  clearInterval(T.int); T.running=false; T.phase='idle'; T.round=0;
+  el('main').textContent='Start';
+  setPhase('ready','#f87171','');
+  el('phase').textContent='ready'; el('clock').textContent='--'; el('round').textContent='set your intervals';
+  el('arc').setAttribute('stroke-dashoffset','0');
+  document.body.className='';
+}
+function finish(){
+  clearInterval(T.int); T.running=false; T.phase='done';
+  el('main').textContent='Go again';
+  setPhase('done','#4ade80','work');
+  el('clock').textContent='OK'; el('round').textContent='workout complete - '+C.n+' rounds';
+  beep(660,0.15); beep(880,0.15,0.2); beep(1100,0.4,0.4);
+}
+el('main').onclick=start;
+el('reset').onclick=resetAll;
+document.querySelectorAll('[data-c]').forEach(function(b){
+  b.onclick=function(){
+    var p=b.dataset.c.split(','), k=p[0], d=parseInt(p[1],10);
+    if(k==='w')C.w=Math.min(300,Math.max(5,C.w+d));
+    if(k==='r')C.r=Math.min(300,Math.max(5,C.r+d));
+    if(k==='n')C.n=Math.min(40,Math.max(1,C.n+d));
+    cfgShow(); if(T.phase==='idle')resetAll();
+  };
+});
+document.querySelectorAll('[data-p]').forEach(function(b){
+  b.onclick=function(){
+    var p=b.dataset.p.split(',');
+    C.w=parseInt(p[0],10); C.r=parseInt(p[1],10); C.n=parseInt(p[2],10);
+    cfgShow(); resetAll();
+  };
+});
+cfgShow();
+</script>
+</body>
+</html>
